@@ -49,6 +49,67 @@ struct Aviso{
 
 };
 
+//Clase grafo de Avisos
+class Grafo{
+private:
+    
+    vector<Aviso> v;
+    double totalDuration, totalPenalty, totalPenaltyPerDay;
+
+public:
+
+    //Constructores
+    Grafo(){
+        totalDuration = 0;
+        totalPenalty = 0;
+        totalPenaltyPerDay = 0;
+    }
+
+    Grafo(const Grafo& other){
+        v = other.v;
+
+        totalDuration = other.totalDuration;
+        totalPenalty = other.totalPenalty;
+        totalPenaltyPerDay = other.totalPenaltyPerDay;
+    }
+    
+
+    //Consultores
+    double getTotalDuration() {return totalDuration;}
+
+    double getTotalPenalty() {return totalPenalty;}
+
+    double getTotalPenaltyPerDay() {return totalPenaltyPerDay;}
+
+    void push_back(Aviso a){
+        v.push_back(a);
+
+        totalDuration += a.duration;
+        totalPenalty += a.penalty;
+        totalPenaltyPerDay += a.penalty_per_day;
+    }
+
+    int size() const {return v.size();}
+
+    vector<Aviso>::iterator begin(){return v.begin();}
+
+    vector<Aviso>::iterator end(){return v.end();}
+
+    Aviso& operator[](int i) {return v[i];}
+
+    const Aviso& operator[](int i) const {return v[i];}
+
+    bool empty() {return v.empty();}
+
+    void clear() {
+        v.clear();
+
+        totalDuration = 0;
+        totalPenalty = 0;
+        totalPenaltyPerDay = 0;
+    }
+};
+
 /*****************************************************************************/
 //FUNCIONES AUXILIARES
 
@@ -100,18 +161,18 @@ bool alreadyIn(vector<Aviso> v, Aviso a){
 
 // Función de factibilidad de un nodo. Indica si el nodo cumple los requisitos
 // para ser tenido en cuenta para la solucion
-bool Factible(vector<Aviso> v, Aviso nodo){
+bool Factible(Grafo v, Aviso nodo){
     double total_duration = 0;
 
     if(!v.empty())
-        total_duration = totalDuration(v) + nodo.duration;
+        total_duration = v.getTotalDuration() + nodo.duration;
 
     return nodo.deadline >= total_duration;
 }
 
 // Función que calcula el total de nodos factibles que aún quedan por explorar
 // en la rama actual
-int nNodosFactibles(vector<Aviso> partial_sol, vector<Aviso> grafo, Aviso a, int k=0){
+int nNodosFactibles(Grafo partial_sol, Grafo grafo, Aviso a, int k=0){
     int size = grafo.size();
     int n = 0;
 
@@ -123,23 +184,6 @@ int nNodosFactibles(vector<Aviso> partial_sol, vector<Aviso> grafo, Aviso a, int
     return n;
 }
 
-// Función que dado un vector de Avisos, busca la posición del Aviso con 
-// mayor penalización factible a partir de una posición dada k
-int findMayorPenaltyFactible(vector<Aviso> partial_sol,vector<Aviso> grafo,int k=0){
-    double max = grafo[k].penalty, pos = INVALID;
-    int size = grafo.size();
-
-    for(int i = k; i < size; i++){
-        if(grafo[i].penalty > max && Factible(partial_sol,grafo[i]) && 
-            !alreadyIn(partial_sol,grafo[i])){
-            max = grafo[i].penalty;
-            pos = i;
-        }
-    }
-
-    return pos;
-}
-
 /*****************************************************************************/
 //FUNCIONES DE CÁLCULO DE COTA
 
@@ -147,17 +191,17 @@ int findMayorPenaltyFactible(vector<Aviso> partial_sol,vector<Aviso> grafo,int k
 // Calcula la penalización actual de la solución parcial más la penalización
 // recién añadida, por el número de nodos que quedan por visitar que verifican
 // la función de factibilidad
-double Cota1(vector<Aviso> partial_sol, vector<Aviso> grafo, Aviso a, int k){
+double Cota1(Grafo partial_sol, Grafo grafo, Aviso a, int k){
     int nAvisos = nNodosFactibles(partial_sol, grafo,a, k);
 
-    return totalPenalty(partial_sol) + grafo[k].penalty * nAvisos;
+    return partial_sol.getTotalPenalty() + grafo[k].penalty * nAvisos;
 }
 
 // Función de Cota 2:
 // Calcula la penalización actual de la solución parcial más la penalización
 // de los nodos que quedan por visitar que verifican la función de factibilidad
-double Cota2(vector<Aviso> partial_sol, vector<Aviso> grafo, Aviso a, int k){
-    double total = totalPenalty(partial_sol);
+double Cota2(Grafo partial_sol, Grafo grafo, Aviso a, int k){
+    double total = partial_sol.getTotalPenalty();
     int size = grafo.size();
 
     for(int i = k+1; i < size; i++){
@@ -172,27 +216,21 @@ double Cota2(vector<Aviso> partial_sol, vector<Aviso> grafo, Aviso a, int k){
 // Calcula la media de penalización por día de trabajo del vector con la 
 // solución parcial, más la penalización por día de los nodos que quedan por
 // visitar que verifican la función de factibilidad
-double Cota3(vector<Aviso> partial_sol, vector<Aviso> grafo, Aviso a, int k){
-    double total = totalPenaltyPerDay(partial_sol);
+double Cota3(Grafo partial_sol, Grafo grafo, Aviso a, int k){
+    int nAvisos = nNodosFactibles(partial_sol, grafo,a, k);
     int size = grafo.size();
    
-    for(int i = k+1; i < size; i++){
-        if(Factible(partial_sol,grafo[i]) && a != grafo[i]){
-            total += grafo[i].penalty_per_day;
-            
-        }
-    }
 
-    return total;
+    return partial_sol.getTotalPenaltyPerDay() + grafo[k].penalty_per_day * nAvisos;
 }
 
 
 /*****************************************************************************/
 // Implementación del algoritmo Backtracking
-vector<Aviso> BackTracking(vector<Aviso> grafo, int cota){
+Grafo BackTracking(Grafo grafo, int cota){
 
     //Definimos variables
-    vector<Aviso> greedy, partial_sol, final_sol;
+    Grafo greedy, partial_sol, final_sol;
     int size = grafo.size();
     double cota_global, cota_local, aux = 0;
     bool sigue;
@@ -208,13 +246,15 @@ vector<Aviso> BackTracking(vector<Aviso> grafo, int cota){
     switch (cota)
     {
     case 3:
-        cota_global = totalPenaltyPerDay(greedy);
+        cota_global = greedy.getTotalPenaltyPerDay();
         break;
     
     default:
-        cota_global = totalPenalty(greedy);
+        cota_global = greedy.getTotalPenalty();
         break;
     }
+
+    cout << "COTA GLOB: " << cota_global << endl;
     
 
     //Recorremos el grafo en busca de la solución óptima
@@ -245,6 +285,7 @@ vector<Aviso> BackTracking(vector<Aviso> grafo, int cota){
                     break;
                 }
                 
+                cout << "COTA LOCAL: " << cota_local << endl;
 
                 if(cota_local <= cota_global){ //Podamos 
                     sigue = false;
@@ -260,16 +301,18 @@ vector<Aviso> BackTracking(vector<Aviso> grafo, int cota){
             final_sol = partial_sol;
             partial_sol.clear();
 
-            switch (cota)
+            switch (cota) //Actualizamos la cota global
             {
             case 3:
-                cota_global = totalPenaltyPerDay(final_sol);
+                cota_global = final_sol.getTotalPenaltyPerDay();
                 break;
             
             default:
-                cota_global = totalPenalty(final_sol);
+                cota_global = final_sol.getTotalPenalty();
                 break;
-            } //Actualizamos la cota global
+            } 
+
+            cout << "COTA GLOB (ACT): " << cota_global << endl;
         }
 
     }   
@@ -323,7 +366,7 @@ int main(int argc, char** argv){
         return 1;
     }
     
-    vector<Aviso> grafo, sol;
+    Grafo grafo, sol;
     string line;
     int fcota = 0;
 
