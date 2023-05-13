@@ -2,8 +2,13 @@
 #include <vector>
 #include <chrono>
 #include <algorithm> 
+#include <fstream>
+#include <sstream>
+#include <chrono>
+
 
 using namespace std;
+using namespace chrono;
 
 //Definimos el tipo de objeto Aviso
 struct Aviso{
@@ -202,7 +207,7 @@ vector<Aviso> BackTracking(vector<Aviso> grafo, int cota){
     //Definimos cotas según el tipo introducido
     switch (cota)
     {
-    case 3:
+    case 4:
         cota_global =totalPenaltyPerDay(greedy);
         break;
     
@@ -271,14 +276,16 @@ vector<Aviso> BackTracking(vector<Aviso> grafo, int cota){
 /*****************************************************************************/
 /*****************************************************************************/
 
-int main(int narg, char** arg){
+int main(int argc, char** argv){
 
-    vector<Aviso> g, s;
+    //vector<Aviso> g, s;
 
     /*for(int i = 0; i < SIZE; i++){
         g.push_back(Aviso(1,9,i));
-    }*/
+    }
 
+    //Ejemplo 
+    // Resultado correcto: 199 1000 150
     g.push_back(Aviso(2,5,50));
     g.push_back(Aviso(1,4,150));
     g.push_back(Aviso(2,4,13));
@@ -292,11 +299,95 @@ int main(int narg, char** arg){
     s = BackTracking(g, 1);
 
     int size = s.size();
+
+    //Muestra resultado
     cout << "RESULTADO: " << endl;
     for(int i = 0; i < size; i++){
         cout << s[i].penalty << " ";
     }
-    cout << endl;
+    cout << endl;*/
+
+     // Comprobamos que se ha pasado un argumento con la ruta del fichero
+    if (argc != 4) {
+        cerr << "Uso: " << argv[0] << " <funcion_de_cota {1,2,3}> "<< " <fichero_entrada> " 
+             << " <fichero_salida> " << endl;
+        return 1;
+    }
+    
+    vector<Aviso> grafo, sol;
+    string line;
+    int fcota = 0;
+
+    //ENTRADA DEL PROBLEMA
+    fcota = stoi(argv[1]);
+
+    // Abrimos el fichero
+    ifstream file(argv[2]);
+    if (!file.is_open()) {
+        cerr << "No se pudo abrir el fichero" << endl;
+        return 1;
+    }
+
+    double v1, v2, v3;
+    int k = 0;
+
+    // Leemos el fichero línea a línea 
+    while (getline(file, line)) {
+
+        istringstream iss(line);
+        
+        if (!(iss >> v1 >> v2 >> v3)) {
+            std::cerr << "Error al leer el archivo en la línea: " << k << std::endl;
+            return 1;
+        }
+
+        k++;
+        // Lo añadimos al vector
+        grafo.push_back(Aviso(v1,v2,v3));
+    }
+	
+	// Cerramos el fichero
+    file.close();
+
+    
+    //CÁLCULO DEL TIEMPO EMPÍRICO
+
+    //Inicializamos las variables para calcular el tiempo que tarda el algoritmo
+    high_resolution_clock::time_point t_antes, t_despues;
+	duration<double> transcurrido;
+    
+    //Pasamos los datos del vector y calculamos el tiempo que tarda
+    t_antes = high_resolution_clock::now();
+    sol = BackTracking(grafo, fcota);
+    t_despues = high_resolution_clock::now();
+    
+    transcurrido = duration_cast<duration<double>>(t_despues - t_antes);
+    cout << grafo.size()/3 << "\t" << transcurrido.count() << endl;
+    
+
+    //SALIDA DEL PROGRAMA (Solución al Problema)
+
+    //Abrimos el fichero de salida
+    ofstream ofile(argv[3]);
+    
+    if (!ofile.is_open()) {
+        cerr << "No se pudo abrir el fichero de salida" << endl;
+        return 1;
+    }
+    
+    for(int i = 0; i < sol.size(); i++){
+        line = to_string((int)sol[i].penalty) + "\n";
+        ofile << line;
+    }
+
+    
+    //Cerramos el fichero
+    ofile.close();
+
+    
+
+
+    return 0;
 
     return 0;
 }
