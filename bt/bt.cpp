@@ -178,7 +178,7 @@ double Cota3(vector<Aviso> partial_sol, vector<Aviso> grafo, Aviso a, int k){
    
     for(int i = k+1; i < size; i++){
         if(Factible(partial_sol,grafo[i]) && a != grafo[i]){
-            total += grafo[i].penalty;
+            total += grafo[i].penalty_per_day;
             
         }
     }
@@ -207,8 +207,8 @@ vector<Aviso> BackTracking(vector<Aviso> grafo, int cota){
     //Definimos cotas según el tipo introducido
     switch (cota)
     {
-    case 4:
-        cota_global =totalPenaltyPerDay(greedy);
+    case 3:
+        cota_global = totalPenaltyPerDay(greedy);
         break;
     
     default:
@@ -260,7 +260,16 @@ vector<Aviso> BackTracking(vector<Aviso> grafo, int cota){
             final_sol = partial_sol;
             partial_sol.clear();
 
-            cota_global = totalPenalty(final_sol); //Actualizamos la cota global
+            switch (cota)
+            {
+            case 3:
+                cota_global = totalPenaltyPerDay(final_sol);
+                break;
+            
+            default:
+                cota_global = totalPenalty(final_sol);
+                break;
+            } //Actualizamos la cota global
         }
 
     }   
@@ -362,7 +371,7 @@ int main(int argc, char** argv){
     t_despues = high_resolution_clock::now();
     
     transcurrido = duration_cast<duration<double>>(t_despues - t_antes);
-    cout << grafo.size()/3 << "\t" << transcurrido.count() << endl;
+    cout << grafo.size() << "\t" << transcurrido.count() << endl;
     
 
     //SALIDA DEL PROGRAMA (Solución al Problema)
