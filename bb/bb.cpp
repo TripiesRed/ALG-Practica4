@@ -1,4 +1,5 @@
 #include <iostream>
+#include <string>
 #include <vector>
 #include <chrono>
 #include <algorithm> 
@@ -50,6 +51,12 @@ struct Aviso{
 
 };
 
+string to_s(Aviso A){
+    
+    string s = "{" + to_string(A.duration) + ", " + to_string(A.deadline) + ", " + to_string(A.penalty) + "}";
+    return s;
+}
+
 //Clase grafo de Avisos
 class Grafo{
 private:
@@ -83,12 +90,17 @@ public:
 
     double getTotalPenaltyPerDay() {return totalPenaltyPerDay;}
 
-    void push_back(Aviso a){
+    void push_back(Aviso a, double extra_pen){
         v.push_back(a);
 
         totalDuration += a.duration;
-        totalPenalty += a.penalty;
-        totalPenaltyPerDay += a.penalty_per_day;
+        totalPenalty += extra_pen;
+       // totalPenaltyPerDay += a.penalty_per_day;
+    }
+
+
+    double plusDuration (Aviso a){
+        return totalDuration + a.duration;
     }
 
     int size() const {return v.size();}
@@ -114,6 +126,12 @@ public:
         totalPenalty = 0;
         totalPenaltyPerDay = 0;
     }
+
+    void print(){
+        for(int i = 0; i < v.size(); i++){
+            cout << to_s(v[i]) << endl;
+        }
+    }
 };
 
 /*****************************************************************************/
@@ -136,18 +154,38 @@ int GetPositionLowerLimit(vector<double> limits){
         return distance(limits.begin(), min_it);
     }
 }
-
+void Cota2(Grafo partial_sol,vector<Aviso> v, Aviso A){}
 /*****************************************************************************/
  
-double Cota1(Grafo partial_sol, Aviso A){  //Funcion de prueba
-    return 2.9;
+double Cota1(Grafo partial_sol, vector<Aviso> v, Aviso A){  //Funcion de prueba
+      
+    if(!Feasible(partial_sol.getTotalDuration(), A)){
+        return INFINITY;
+    }
+    else{
+        double estimated_penalty = 0;
+        double duration = partial_sol.plusDuration(A);
+
+        for(int i = 0; i < v.size(); i++){
+
+            if(v[i] != A){
+                
+                if(!Feasible(duration, v[i])){
+                    estimated_penalty += v[i].penalty;
+                }
+            }  
+        }
+
+        return partial_sol.getTotalPenalty() + estimated_penalty;
+    }
+
 }
 
 /*****************************************************************************/
 
-Grafo BandB(Grafo grafo, int cota){
+Grafo BandB(vector<Aviso> v, int cota){
 
-    double (*function)(Grafo, Aviso) = nullptr;
+    double (*function)(Grafo, vector<Aviso>, Aviso) = nullptr;
     
     switch (cota) {
         case 1:
@@ -160,7 +198,7 @@ Grafo BandB(Grafo grafo, int cota){
             function = Cota1;
             break;
         default:
-            cerr << "Error: la función de cota ingresada no es válido" << endl;
+            cerr << "Error: la función de cota ingresada no es válida" << endl;
             exit(-1);
     }
 
@@ -171,22 +209,28 @@ Grafo BandB(Grafo grafo, int cota){
     do{
 
         vector<double> limits;
-        for(int i = 0; i < grafo.size(); i++){
-            limits.push_back(function(solution, grafo[i]));
+        for(int i = 0; i < v.size(); i++){
+            limits.push_back(function(solution, v, v[i]));
         }
 
         int min_pos = GetPositionLowerLimit(limits);
 
         if(min_pos != INVALID){
-            solution.push_back(grafo[min_pos]);
-            current_limit += grafo[min_pos].penalty;
-            grafo.erase(min_pos);
+            solution.push_back(v[min_pos], limits[min_pos]);
+            current_limit += limits[min_pos];
+            v.erase(v.begin() + min_pos);
+
+            for(int i = 0; i < v.size(); i++){
+                if(!Feasible(solution.getTotalDuration(), v[i])){
+                    v.erase(v.begin() + i);
+                }
+            }
         }
         else{
             all_nodes_unfeasible = true;
         }
 
-    }while(!grafo.empty() && !all_nodes_unfeasible);
+    }while(!v.empty() && !all_nodes_unfeasible);
 
     return solution;
 }
@@ -194,7 +238,8 @@ Grafo BandB(Grafo grafo, int cota){
 
 int main(int argc, char** argv){
 
-        if (argc != 4) {
+/*
+    if (argc != 4) {
         cerr << "Uso: " << argv[0] << " <funcion_de_cota {1,2,3}> "<< " <fichero_entrada> " 
              << " <fichero_salida> " << endl;
         return 1;
@@ -269,6 +314,19 @@ int main(int argc, char** argv){
     
     //Cerramos el fichero
     ofile.close();
+*/
+
+    vector<Aviso> v;
+
+    v.push_back({2, 3, 50});
+    v.push_back({1, 4, 150});
+    v.push_back({2, 4, 13});
+    v.push_back({3, 3, 10});
+
+    Grafo g;
+    g = BandB(v, 1);
+
+    g.print();
 
     return 0;
 }
