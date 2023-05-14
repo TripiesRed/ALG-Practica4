@@ -25,7 +25,7 @@ int main(int argc, char *argv[])
     // Abrir el archivo para escribir
     ofstream file(file_name, ios::trunc);
 
-    int n1, n2, n3;
+    int n1, n2, n3 = 0;
 
     // Generar el número de líneas especificado con dos números aleatorios tipo float en cada línea
     for (int i = 0; i < navisos; i++)
@@ -36,7 +36,7 @@ int main(int argc, char *argv[])
 
         n1 = dis(gen);
         n2 = dis(gen);
-        n3 = dis(gen);
+        while(n3 < n2) n3 = dis(gen); //Nos aseguramos deadline >= duration
 
         if(i == navisos - 1){
             file << n1 << " " << n2 << " " << n3;
@@ -44,6 +44,8 @@ int main(int argc, char *argv[])
         else{
             file << n1 << " " << n2 << " " << n3 << "\n";
         }
+
+        n3 = 0;
     }
 
     // Cerrar el archivo

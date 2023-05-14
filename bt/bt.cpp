@@ -81,6 +81,7 @@ public:
 
     double getTotalPenaltyPerDay() {return totalPenaltyPerDay;}
 
+    //Inserta un elemento en el vector y actualiza los atributos
     void push_back(Aviso a){
         v.push_back(a);
 
@@ -101,6 +102,7 @@ public:
 
     bool empty() {return v.empty();}
 
+    //Vacía el vector y actualiza los atributos
     void clear() {
         v.clear();
 
@@ -113,39 +115,10 @@ public:
 /*****************************************************************************/
 //FUNCIONES AUXILIARES
 
-static const int INVALID = -1;
-
 // Función de comparación entre dos objetos de tipo Aviso, que usaremos para
 // ordenar el vector de Avisos de mayor a menor según la penalización
 bool comp(Aviso &l, Aviso &r){
         return l.penalty > r.penalty;
-}
-
-// Calcula la duración total de realizar todos los Avisos de un vector
-double totalDuration(vector<Aviso> v){
-    double total = 0;
-
-    for(auto it : v) total += it.duration;
-
-    return total;
-}
-
-// Calcula la penalización total de todos los Avisos de un vector
-double totalPenalty(vector<Aviso> v){
-    double total = 0;
-
-    for(auto it : v) total += it.penalty;
-
-    return total;
-}
-
-// Calcula la penalización media por día total de todos los Avisos de un vector
-double totalPenaltyPerDay(vector<Aviso> v){
-    double total = 0;
-
-    for(auto it : v) total += it.penalty_per_day;
-
-    return total;
 }
 
 // Función que devuelve 'true' si el objeto Aviso ya está en el vector v,
@@ -212,19 +185,6 @@ double Cota2(Grafo partial_sol, Grafo grafo, Aviso a, int k){
     return total;
 }
 
-// Función de Cota 3:
-// Calcula la media de penalización por día de trabajo del vector con la 
-// solución parcial, más la penalización por día de los nodos que quedan por
-// visitar que verifican la función de factibilidad
-double Cota3(Grafo partial_sol, Grafo grafo, Aviso a, int k){
-    int nAvisos = nNodosFactibles(partial_sol, grafo,a, k);
-    int size = grafo.size();
-   
-
-    return partial_sol.getTotalPenaltyPerDay() + grafo[k].penalty_per_day * nAvisos;
-}
-
-
 /*****************************************************************************/
 // Implementación del algoritmo Backtracking
 Grafo BackTracking(Grafo grafo, int cota){
@@ -232,7 +192,7 @@ Grafo BackTracking(Grafo grafo, int cota){
     //Definimos variables
     Grafo greedy, partial_sol, final_sol;
     int size = grafo.size();
-    double cota_global, cota_local, aux = 0;
+    double cota_global, cota_local;
     bool sigue;
     
     sort(grafo.begin(), grafo.end(), comp); //Ordenamos vector
@@ -242,20 +202,8 @@ Grafo BackTracking(Grafo grafo, int cota){
         if(Factible(greedy,grafo[i]))
             greedy.push_back(grafo[i]);
     
-    //Definimos cotas según el tipo introducido
-    switch (cota)
-    {
-    case 3:
-        cota_global = greedy.getTotalPenaltyPerDay();
-        break;
-    
-    default:
-        cota_global = greedy.getTotalPenalty();
-        break;
-    }
-
-    cout << "COTA GLOB: " << cota_global << endl;
-    
+    //Definimos la cota global
+    cota_global = greedy.getTotalPenalty();
 
     //Recorremos el grafo en busca de la solución óptima
     for (int i = 0; i < size; i++){
@@ -276,16 +224,10 @@ Grafo BackTracking(Grafo grafo, int cota){
                     cota_local = Cota2(partial_sol, grafo, a, j);
                     break;
                 
-                case 3:
-                    cota_local = Cota3(partial_sol, grafo, a, j);
-                    break;
-                
                 default:
                     cota_local = Cota1(partial_sol, grafo, a, j);
                     break;
                 }
-                
-                cout << "COTA LOCAL: " << cota_local << endl;
 
                 if(cota_local <= cota_global){ //Podamos 
                     sigue = false;
@@ -301,18 +243,8 @@ Grafo BackTracking(Grafo grafo, int cota){
             final_sol = partial_sol;
             partial_sol.clear();
 
-            switch (cota) //Actualizamos la cota global
-            {
-            case 3:
-                cota_global = final_sol.getTotalPenaltyPerDay();
-                break;
-            
-            default:
-                cota_global = final_sol.getTotalPenalty();
-                break;
-            } 
-
-            cout << "COTA GLOB (ACT): " << cota_global << endl;
+            //Actualizamos la cota global
+            cota_global = final_sol.getTotalPenalty();
         }
 
     }   
@@ -329,35 +261,6 @@ Grafo BackTracking(Grafo grafo, int cota){
 /*****************************************************************************/
 
 int main(int argc, char** argv){
-
-    //vector<Aviso> g, s;
-
-    /*for(int i = 0; i < SIZE; i++){
-        g.push_back(Aviso(1,9,i));
-    }
-
-    //Ejemplo 
-    // Resultado correcto: 199 1000 150
-    g.push_back(Aviso(2,5,50));
-    g.push_back(Aviso(1,4,150));
-    g.push_back(Aviso(2,4,13));
-    g.push_back(Aviso(3,3,10));
-    g.push_back(Aviso(1,4,199));
-    g.push_back(Aviso(2,4,200));
-    g.push_back(Aviso(1,4,33));
-    g.push_back(Aviso(2,4,1000));
-    g.push_back(Aviso(1,4,133));
-
-    s = BackTracking(g, 1);
-
-    int size = s.size();
-
-    //Muestra resultado
-    cout << "RESULTADO: " << endl;
-    for(int i = 0; i < size; i++){
-        cout << s[i].penalty << " ";
-    }
-    cout << endl;*/
 
      // Comprobamos que se ha pasado un argumento con la ruta del fichero
     if (argc != 4) {
@@ -434,12 +337,8 @@ int main(int argc, char** argv){
 
     
     //Cerramos el fichero
-    ofile.close();
+    ofile.close(); 
 
-    
-
-
-    return 0;
 
     return 0;
 }
