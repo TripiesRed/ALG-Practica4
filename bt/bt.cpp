@@ -222,13 +222,15 @@ Grafo BackTracking(Grafo grafo, int cota){
         Aviso a = grafo[i];
         sigue = true;
         partial_sol.push_back(a);
-
+        cout << "Para " << to_s(a) << endl;
         cout << "CGLOBAL: " << cota_global << endl;
 
         for(int j = 0; j < size && sigue; j++){
+            cout << "Comp " << to_s(grafo[j]) << endl;
 
             //Función de factibilildad
             if(a!=grafo[j] && Factible(partial_sol, grafo[j])){ 
+                cout << "YES SIR" << endl;
                 partial_sol.push_back(grafo[j]);
 
                 //Seleccionamos función de cota
@@ -253,7 +255,7 @@ Grafo BackTracking(Grafo grafo, int cota){
         }
 
         //En caso de haber encontrado un posible solución la guardamos 
-        if(!partial_sol.empty() && partial_sol.getTotalPenalty() > cota_global){
+        if(!partial_sol.empty() && cota_local > cota_global){
             final_sol = partial_sol;
             partial_sol.clear();
 
@@ -278,7 +280,7 @@ Grafo BackTracking(Grafo grafo, int cota){
 
 int main(int argc, char** argv){
 
-    /* // Comprobamos que se ha pasado un argumento con la ruta del fichero
+     // Comprobamos que se ha pasado un argumento con la ruta del fichero
     if (argc != 4) {
         cerr << "Uso: " << argv[0] << " <funcion_de_cota {1,2,3}> "<< " <fichero_entrada> " 
              << " <fichero_salida> " << endl;
@@ -353,7 +355,7 @@ int main(int argc, char** argv){
 
     
     //Cerramos el fichero
-    ofile.close(); */
+    ofile.close(); 
 
     Grafo g, s;
 
@@ -365,6 +367,10 @@ int main(int argc, char** argv){
     s.push_back(g[0]);
     s.push_back(g[1]);
     if(Factible(s,g[2]))cout << "O" << endl;
+
+    s.print();
+
+    s = BackTracking(g,1);
 
     s.print();
 
