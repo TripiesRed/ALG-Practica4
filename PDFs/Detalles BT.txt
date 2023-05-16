@@ -9,7 +9,8 @@ A partir de esta solución obtenemos la primera cota global
 3) Comenzamos a recorrer el grafo situandonos en el primer nodo que nos encontramos, y en caso de ser factible lo añadimos a la lista SP.
 4) Calculamos, apoyándonos en las funciones de cota, el límite inferior que resultaría si añadiéramos cada aviso factible de los nodos aun por visitar a la lista SP.
 5) Añadimos el siguiente nodo factible con mayor Penalización.
-6) Eliminamos los avisos que se vuelven insatifacibles al haber añadido el anterior.
+6) Eliminamos los avisos que se vuelven insatisfacibles al haber añadido el anterior.
+7) Una vez recorrido dicha rama al completo o ha sido podada, en caso de haber obtenido una mejor solución, se actualiza SF y se actualiza la cota global.
 
 Para la implementación en C++ hemos optado por una clase Grafo, consistente en un vector de avisos y unas variables que almacenan el día actual y la penalización que llevamos acumulada. La solución, pues, será un dato Grafo que almacena en un vector los trabajos que se realizan en ese orden. Los trabajos que no se hacen no se guardan en la solución, ni siquiera al final de la misma. 
 
