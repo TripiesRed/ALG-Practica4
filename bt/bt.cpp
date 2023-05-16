@@ -13,7 +13,7 @@ using namespace chrono;
 //Definimos el tipo de objeto Aviso
 struct Aviso{
 
-    double duration, deadline, penalty;
+    int duration, deadline, penalty;
     double penalty_per_day;
 
     //Constructores
@@ -48,6 +48,12 @@ struct Aviso{
     }
 
 };
+
+// Función que escribe la salida formateada de un objeto Aviso
+string to_s(Aviso A){ 
+    string s = "{" + to_string(A.duration) + ", " + to_string(A.deadline) + ", " + to_string(A.penalty) + "}";
+    return s;
+}
 
 //Clase grafo de Avisos
 class Grafo{
@@ -109,6 +115,12 @@ public:
         totalDuration = 0;
         totalPenalty = 0;
         totalPenaltyPerDay = 0;
+    }
+
+    void print(){
+        for(int i = 0; i < v.size(); i++){
+            cout << to_s(v[i]) << endl;
+        }
     }
 };
 
@@ -211,6 +223,8 @@ Grafo BackTracking(Grafo grafo, int cota){
         sigue = true;
         partial_sol.push_back(a);
 
+        cout << "CGLOBAL: " << cota_global << endl;
+
         for(int j = 0; j < size && sigue; j++){
 
             //Función de factibilildad
@@ -233,18 +247,20 @@ Grafo BackTracking(Grafo grafo, int cota){
                     sigue = false;
                     partial_sol.clear();
                 }
-                
+                cout << "COTALOCAL: " << cota_local << endl;
             }
             
         }
 
         //En caso de haber encontrado un posible solución la guardamos 
-        if(!partial_sol.empty()){
+        if(!partial_sol.empty() && partial_sol.getTotalPenalty() > cota_global){
             final_sol = partial_sol;
             partial_sol.clear();
 
             //Actualizamos la cota global
             cota_global = final_sol.getTotalPenalty();
+
+            cout << "NEW___CGLOBAL: " << cota_global << endl;
         }
 
     }   
@@ -262,7 +278,7 @@ Grafo BackTracking(Grafo grafo, int cota){
 
 int main(int argc, char** argv){
 
-     // Comprobamos que se ha pasado un argumento con la ruta del fichero
+    /* // Comprobamos que se ha pasado un argumento con la ruta del fichero
     if (argc != 4) {
         cerr << "Uso: " << argv[0] << " <funcion_de_cota {1,2,3}> "<< " <fichero_entrada> " 
              << " <fichero_salida> " << endl;
@@ -331,13 +347,26 @@ int main(int argc, char** argv){
     }
     
     for(int i = 0; i < sol.size(); i++){
-        line = to_string((int)sol[i].penalty) + "\n";
+        line = line = to_s(sol[i]) + "\n";
         ofile << line;
     }
 
     
     //Cerramos el fichero
-    ofile.close(); 
+    ofile.close(); */
+
+    Grafo g, s;
+
+    g.push_back({2, 3, 50});
+    g.push_back({1, 4, 150});
+    g.push_back({2, 4, 13});
+    g.push_back({3, 3, 10});
+
+    s.push_back(g[0]);
+    s.push_back(g[1]);
+    if(Factible(s,g[2]))cout << "O" << endl;
+
+    s.print();
 
 
     return 0;

@@ -36,7 +36,8 @@ int main(int argc, char *argv[])
 
         n1 = dis(gen);
         n2 = dis(gen);
-        while(n3 < n2) n3 = dis(gen); //Nos aseguramos deadline >= duration
+        while(n2 < n1) n2 = dis(gen); //Nos aseguramos deadline >= duration
+        n3 = dis(gen);
 
         if(i == navisos - 1){
             file << n1 << " " << n2 << " " << n3;

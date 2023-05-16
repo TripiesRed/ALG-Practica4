@@ -1,0 +1,4 @@
+
+Detalles de Implementación Algoritmo BackTracking:
+
+Dado que el 

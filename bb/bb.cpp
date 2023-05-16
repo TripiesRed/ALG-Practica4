@@ -51,56 +51,48 @@ struct Aviso{
 
 };
 
-string to_s(Aviso A){
-    
+string to_s(Aviso A){ 
     string s = "{" + to_string(A.duration) + ", " + to_string(A.deadline) + ", " + to_string(A.penalty) + "}";
     return s;
 }
 
-//Clase grafo de Avisos
-class Grafo{
+//Clase agenda de Avisos
+class Schedule{
 private:
     
     vector<Aviso> v;
-    double totalDuration, totalPenalty, totalPenaltyPerDay;
+    double current_day, totalPenalty;
 
 public:
 
     //Constructores
-    Grafo(){
-        totalDuration = 0;
+    Schedule(){
+        current_day = 0;
         totalPenalty = 0;
-        totalPenaltyPerDay = 0;
     }
     
 
-    Grafo(const Grafo& other){
+    Schedule(const Schedule& other){
         v = other.v;
-
-        totalDuration = other.totalDuration;
+        current_day = other.current_day;
         totalPenalty = other.totalPenalty;
-        totalPenaltyPerDay = other.totalPenaltyPerDay;
     }
     
 
     //Consultores
-    double getTotalDuration() {return totalDuration;}
+    double getCurrentDay() {return current_day;}
 
     double getTotalPenalty() {return totalPenalty;}
-
-    double getTotalPenaltyPerDay() {return totalPenaltyPerDay;}
 
     void push_back(Aviso a, double extra_pen){
         v.push_back(a);
 
-        totalDuration += a.duration;
+        current_day += a.duration;
         totalPenalty += extra_pen;
-       // totalPenaltyPerDay += a.penalty_per_day;
     }
 
-
     double plusDuration (Aviso a){
-        return totalDuration + a.duration;
+        return current_day + a.duration;
     }
 
     int size() const {return v.size();}
@@ -121,10 +113,8 @@ public:
 
     void clear() {
         v.clear();
-
-        totalDuration = 0;
+        current_day = 0;
         totalPenalty = 0;
-        totalPenaltyPerDay = 0;
     }
 
     void print(){
@@ -154,12 +144,16 @@ int GetPositionLowerLimit(vector<double> limits){
         return distance(limits.begin(), min_it);
     }
 }
-void Cota2(Grafo partial_sol,vector<Aviso> v, Aviso A){}
+
 /*****************************************************************************/
- 
-double Cota1(Grafo partial_sol, vector<Aviso> v, Aviso A){  //Funcion de prueba
+
+/* Función de cota 1:
+    Devuelve un valor double que determina la penalización que se acumularía en caso de 
+    añadir el Aviso A a la solución parcial.
+*/
+double Cota1(Schedule partial_sol, vector<Aviso> v, Aviso A){
       
-    if(!Feasible(partial_sol.getTotalDuration(), A)){
+    if(!Feasible(partial_sol.getCurrentDay(), A)){
         return INFINITY;
     }
     else{
@@ -181,47 +175,62 @@ double Cota1(Grafo partial_sol, vector<Aviso> v, Aviso A){  //Funcion de prueba
 
 }
 
+/* Función de cota 2:
+    Devuelve el cociente entre el número de dias disponibles para hacer un Aviso y
+    la penalización del Aviso. El aviso que devuelva menor valor será considerado el más prioritario.
+*/
+double Cota2(Schedule partial_sol, vector<Aviso> v, Aviso A){
+
+    if(!Feasible(partial_sol.getCurrentDay(), A)){
+        return INFINITY;
+    }
+
+    else{
+        double priority = (A.deadline - partial_sol.getCurrentDay()) / A.penalty;
+        return priority;
+    }
+
+}
+
 /*****************************************************************************/
 
-Grafo BandB(vector<Aviso> v, int cota){
+Schedule BandB(vector<Aviso> v, int cota){
 
-    double (*function)(Grafo, vector<Aviso>, Aviso) = nullptr;
+    double (*function)(Schedule, vector<Aviso>, Aviso) = nullptr;
     
     switch (cota) {
         case 1:
             function = Cota1;
             break;
         case 2:
-            function = Cota1;
-            break;
-        case 3:
-            function = Cota1;
+            function = Cota2;
             break;
         default:
             cerr << "Error: la función de cota ingresada no es válida" << endl;
             exit(-1);
     }
 
-    Grafo solution;
-    double current_limit = GLOBAL_LIMIT;
+    Schedule solution;
     bool all_nodes_unfeasible = false;
 
     do{
 
+        // Asignamos las cotas a cada nodo (aviso)
         vector<double> limits;
         for(int i = 0; i < v.size(); i++){
             limits.push_back(function(solution, v, v[i]));
         }
 
+        // Tomamos el nodo con menor cota
         int min_pos = GetPositionLowerLimit(limits);
 
         if(min_pos != INVALID){
             solution.push_back(v[min_pos], limits[min_pos]);
-            current_limit += limits[min_pos];
             v.erase(v.begin() + min_pos);
 
+            // Borramos de la lista aquellos avisos insatifascibles
             for(int i = 0; i < v.size(); i++){
-                if(!Feasible(solution.getTotalDuration(), v[i])){
+                if(!Feasible(solution.getCurrentDay(), v[i])){
                     v.erase(v.begin() + i);
                 }
             }
@@ -238,14 +247,14 @@ Grafo BandB(vector<Aviso> v, int cota){
 
 int main(int argc, char** argv){
 
-/*
     if (argc != 4) {
         cerr << "Uso: " << argv[0] << " <funcion_de_cota {1,2,3}> "<< " <fichero_entrada> " 
              << " <fichero_salida> " << endl;
         return 1;
     }
     
-    Grafo grafo, sol;
+    vector<Aviso> list;
+    Schedule sol;
     string line;
     int fcota = 0;
 
@@ -274,7 +283,7 @@ int main(int argc, char** argv){
 
         k++;
         // Lo añadimos al vector
-        grafo.push_back(Aviso(v1,v2,v3));
+        list.push_back(Aviso(v1,v2,v3));
     }
 	
 	// Cerramos el fichero
@@ -289,11 +298,11 @@ int main(int argc, char** argv){
     
     //Pasamos los datos del vector y calculamos el tiempo que tarda
     t_antes = high_resolution_clock::now();
-  //  sol = BackTracking(grafo, fcota);
+    sol = BandB(list, fcota);
     t_despues = high_resolution_clock::now();
     
     transcurrido = duration_cast<duration<double>>(t_despues - t_antes);
-    cout << grafo.size() << "\t" << transcurrido.count() << endl;
+    cout << list.size() << "\t" << transcurrido.count() << endl;
     
 
     //SALIDA DEL PROGRAMA (Solución al Problema)
@@ -307,26 +316,12 @@ int main(int argc, char** argv){
     }
     
     for(int i = 0; i < sol.size(); i++){
-        line = to_string((int)sol[i].penalty) + "\n";
+        line = to_s(sol[i]) + "\n";
         ofile << line;
     }
 
-    
     //Cerramos el fichero
     ofile.close();
-*/
-
-    vector<Aviso> v;
-
-    v.push_back({2, 3, 50});
-    v.push_back({1, 4, 150});
-    v.push_back({2, 4, 13});
-    v.push_back({3, 3, 10});
-
-    Grafo g;
-    g = BandB(v, 1);
-
-    g.print();
 
     return 0;
 }
