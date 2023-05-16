@@ -1,0 +1,9 @@
+Conclusiones:
+
+1)La mayor complicación a la hora de abordar el problema de recorrer un grafo, buscando una solución óptima es elegir las funciones de cota.
+
+2)El algoritmo BackTracking presenta cierta irregularidades en los tiempos calculados, siendo mucho más notable cuando se le aplica la función de cota 1, posiblemente por la forma en que se calculan las funciones de cota.
+
+3)El algoritmo BackTracking da por lo general, mejores tiempos para problemas de mayor tamaño que el Branch and Bound (función de cota 1).
+
+4)El método que menos tiempo requiere es el Branch and Bound con la función de cota 2, debido esto a que su funcionamiento es más similar a una heurística.
