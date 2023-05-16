@@ -248,7 +248,7 @@ Schedule BandB(vector<Aviso> v, int cota){
 int main(int argc, char** argv){
 
     if (argc != 4) {
-        cerr << "Uso: " << argv[0] << " <funcion_de_cota {1,2,3}> "<< " <fichero_entrada> " 
+        cerr << "Uso: " << argv[0] << " <funcion_de_cota {1,2}> "<< " <fichero_entrada> " 
              << " <fichero_salida> " << endl;
         return 1;
     }

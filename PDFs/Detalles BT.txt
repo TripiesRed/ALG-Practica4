@@ -1,4 +1,26 @@
 
 Detalles de Implementación Algoritmo BackTracking:
 
-Dado que el 
+Para nuestro problema, el algoritmo BackTracking que hemos diseñado consiste en los pasos que explicamos a continuación. Dado entonces un grafo g con todos los Avisos disponibles:
+
+1) Calculamos la solución que se obtendría de aplicar el algoritmo greedy sobre g, es decir, recorrer el grafo eligiendo los Avisos con mayor penalización hasta quedarnos sin hueco.
+A partir de esta solución obtenemos la primera cota global
+2) Creamos dos listas vacías que serán la solución parcial (SP), que contendrá los avisos seleccionados hasta el momento, y la solución final (SF), la cual contendrá los avisos que escogemos definitivamente en el orden en el que se almacenan.
+3) Comenzamos a recorrer el grafo situandonos en el primer nodo que nos encontramos, y en caso de ser factible lo añadimos a la lista SP.
+4) Calculamos, apoyándonos en las funciones de cota, el límite inferior que resultaría si añadiéramos cada aviso factible de los nodos aun por visitar a la lista SP.
+5) Añadimos el siguiente nodo factible con mayor Penalización.
+6) Eliminamos los avisos que se vuelven insatifacibles al haber añadido el anterior.
+
+Para la implementación en C++ hemos optado por una clase Grafo, consistente en un vector de avisos y unas variables que almacenan el día actual y la penalización que llevamos acumulada. La solución, pues, será un dato Grafo que almacena en un vector los trabajos que se realizan en ese orden. Los trabajos que no se hacen no se guardan en la solución, ni siquiera al final de la misma. 
+
+El árbol de exploración se concibe como un vector de Avisos "v" que quedan por procesar.
+
+La restricción explícita del problema es que la solución toma valores numéricos, es decir, un aviso se realizará en n días, y debe estar completo antes del día N, si se quiere evitar la penalización.
+
+La restricción implícita es que un aviso se realiza una única vez.
+
+A continuación describimos las fucniones de cota, produciendo ambas las mismas soluciones para la mayoría de los casos estudiados.
+
+1) La función Cota1 recibe un dos objetos de tipo Grafo partial_sol y grafo, representando el primero la solución parcial, y el segundo la lista con todos los avisos disponibles, una posición k, que indica el último aviso visitado por la función BackTracking, y un Aviso a con el objetivo de evitar repeticiones. Esta función determina la penalización que obtendríamos si siguiesemos explorando la rama del árbol y todos los nodos factibles que quedan por visitar tuviesen la misma penalización que el nodo actual.
+
+2) La función Cota2 recibe los mismos parámetros que la anterior. Sin embargo, con esta función calculamos la penalización que podríamos obtener, si siguiesemos explorando la rama actual y añadiesemos todos los avisos factibles que aún quedan por visitar.

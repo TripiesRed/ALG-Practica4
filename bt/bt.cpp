@@ -96,6 +96,17 @@ public:
         totalPenaltyPerDay += a.penalty_per_day;
     }
 
+    void pop_back(){
+        if(!v.empty()){
+            Aviso a = v[v.size()-1];
+            v.pop_back();
+
+            totalDuration -= a.duration;
+            totalPenalty -= a.penalty;
+            totalPenaltyPerDay -= a.penalty_per_day;
+        }
+    }
+
     int size() const {return v.size();}
 
     vector<Aviso>::iterator begin(){return v.begin();}
@@ -122,6 +133,8 @@ public:
             cout << to_s(v[i]) << endl;
         }
     }
+
+    
 };
 
 /*****************************************************************************/
@@ -133,9 +146,9 @@ bool comp(Aviso &l, Aviso &r){
         return l.penalty > r.penalty;
 }
 
-// Función que devuelve 'true' si el objeto Aviso ya está en el vector v,
+// Función que devuelve 'true' si el objeto Aviso ya está en el Grafo v,
 // 'false' en otro caso
-bool alreadyIn(vector<Aviso> v, Aviso a){
+bool alreadyIn(Grafo v, Aviso a){
     bool already_in = false;
     for(auto it : v){
         if(it == a)already_in = true;
@@ -178,8 +191,8 @@ int nNodosFactibles(Grafo partial_sol, Grafo grafo, Aviso a, int k=0){
 // la función de factibilidad
 double Cota1(Grafo partial_sol, Grafo grafo, Aviso a, int k){
     int nAvisos = nNodosFactibles(partial_sol, grafo,a, k);
-
-    return partial_sol.getTotalPenalty() + grafo[k].penalty * nAvisos;
+    
+    return partial_sol.getTotalPenalty() + a.penalty * nAvisos;
 }
 
 // Función de Cota 2:
@@ -190,7 +203,7 @@ double Cota2(Grafo partial_sol, Grafo grafo, Aviso a, int k){
     int size = grafo.size();
 
     for(int i = k+1; i < size; i++){
-        if(Factible(partial_sol,grafo[i]) && grafo[i] != a)
+        if(Factible(partial_sol,grafo[i]) && !alreadyIn(partial_sol, grafo[i]))
             total += grafo[i].penalty;
     }
 
@@ -204,7 +217,7 @@ Grafo BackTracking(Grafo grafo, int cota){
     //Definimos variables
     Grafo greedy, partial_sol, final_sol;
     int size = grafo.size();
-    double cota_global, cota_local;
+    int cota_global, cota_local;
     bool sigue;
     
     sort(grafo.begin(), grafo.end(), comp); //Ordenamos vector
@@ -229,7 +242,7 @@ Grafo BackTracking(Grafo grafo, int cota){
             cout << "Comp " << to_s(grafo[j]) << endl;
 
             //Función de factibilildad
-            if(a!=grafo[j] && Factible(partial_sol, grafo[j])){ 
+            if(i!=j && Factible(partial_sol, grafo[j])){ 
                 cout << "YES SIR" << endl;
                 partial_sol.push_back(grafo[j]);
 
@@ -255,7 +268,7 @@ Grafo BackTracking(Grafo grafo, int cota){
         }
 
         //En caso de haber encontrado un posible solución la guardamos 
-        if(!partial_sol.empty() && cota_local > cota_global){
+        if(!partial_sol.empty()){
             final_sol = partial_sol;
             partial_sol.clear();
 
@@ -271,7 +284,7 @@ Grafo BackTracking(Grafo grafo, int cota){
     if(final_sol.empty())
         return greedy;
 
-    return final_sol;
+    return greedy;
 }
 
 
@@ -280,9 +293,9 @@ Grafo BackTracking(Grafo grafo, int cota){
 
 int main(int argc, char** argv){
 
-     // Comprobamos que se ha pasado un argumento con la ruta del fichero
+    // Comprobamos que se ha pasado un argumento con la ruta del fichero
     if (argc != 4) {
-        cerr << "Uso: " << argv[0] << " <funcion_de_cota {1,2,3}> "<< " <fichero_entrada> " 
+        cerr << "Uso: " << argv[0] << " <funcion_de_cota {1,2}> "<< " <fichero_entrada> " 
              << " <fichero_salida> " << endl;
         return 1;
     }
